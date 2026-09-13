@@ -2,7 +2,7 @@ services:
   # Backend FastAPI Service
   - type: web
     name: cineguard-backend
-    env: python
+    runtime: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: uvicorn backend.alert_api:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -14,7 +14,7 @@ services:
   # Frontend Static Site
   - type: web
     name: cineguard-frontend
-    env: static
+    runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
     routes:
@@ -26,4 +26,4 @@ services:
         fromService:
           type: web
           name: cineguard-backend
-          property: host
+          property: url
