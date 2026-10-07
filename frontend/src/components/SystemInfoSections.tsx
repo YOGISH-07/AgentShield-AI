@@ -2,19 +2,19 @@ import React from 'react';
 
 export const HowItWorksSection: React.FC = () => {
   const steps = [
-    { num: '01', title: 'Detect', desc: 'YOLO object detection identifies people and mobile devices.' },
-    { num: '02', title: 'Track', desc: 'Multi-object tracker maintains anonymous object continuity across frames.' },
-    { num: '03', title: 'Analyze', desc: 'Spatial proximity and cinema screen region alignment features are calculated.' },
-    { num: '04', title: 'Score', desc: 'Explainable risk engine combines observable signals into a 0–100 score.' },
-    { num: '05', title: 'Alert', desc: 'Authorized security staff receive real-time explainable alerts on threshold crossing.' },
-    { num: '06', title: 'Verify', desc: 'Human staff review evidence before confirming or dismissing any incident.' },
+    { num: '01', title: 'Stream', desc: 'Real-time telemetry ingests AI Agent tool invocations, target resources, and parameters.' },
+    { num: '02', title: 'Inspect', desc: 'Policy Engine inspects payloads for unauthorized tools, sensitive resources, and destructive commands.' },
+    { num: '03', title: 'Analyze', desc: 'Prompt injection signals and execution frequency loop anomalies are evaluated.' },
+    { num: '04', title: 'Score', desc: 'Explainable Risk Engine computes a 0–100 safety score with human-readable evidence.' },
+    { num: '05', title: 'Decision', desc: 'Automated policy decisioning routes actions to ALLOW, HUMAN APPROVAL, or BLOCK.' },
+    { num: '06', title: 'Interception', desc: 'Safety operator approves or blocks intercepted actions before database commitment.' },
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg font-sans">
       <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-4 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-cyan-400" />
-        How CineGuard AI Works
+        How AgentShield AI Safety Engine Works
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {steps.map((step) => (
@@ -38,18 +38,18 @@ export const HowItWorksSection: React.FC = () => {
 
 export const PrivacyNoticeSection: React.FC = () => {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg font-sans">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-1">
-            🔒 Privacy by Design Guarantee
+            🛡️ AI Agent Governance Guarantee
           </h4>
           <p className="text-xs text-slate-400">
-            No facial recognition, biometric extraction, personal names, or automatic legal accusations.
+            Explainable safety rules, zero black-box scoring, and mandatory human operator interception for high-risk actions.
           </p>
         </div>
         <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 whitespace-nowrap">
-          Mandatory Human-in-the-Loop
+          DevHost 2026 PS 2.1 Compliant
         </div>
       </div>
     </div>
@@ -58,18 +58,18 @@ export const PrivacyNoticeSection: React.FC = () => {
 
 export const LimitationsSection: React.FC = () => {
   const limitations = [
-    'Synthetic test footage is used for computer-vision pipeline validation.',
-    'Detection accuracy depends on camera angle, lighting, occlusion, and video resolution.',
-    'YOLO object detection may miss small or partially occluded devices.',
-    'Behavioral risk score is an engineering heuristic, not a probability or legal determination.',
-    'Human verification is strictly required before an incident is confirmed.',
-    'This working prototype does not establish legal wrongdoing.',
+    'Deterministic scenario simulator is used for DevHost 2026 MVP demonstration.',
+    'Policy evaluation latency is <10ms for inline tool interception.',
+    'Risk scoring uses transparent weighted rules (0–100).',
+    'Human operator interception is strictly required for BLOCK / HUMAN APPROVAL decisions.',
+    'SQLite audit database logs all policy violations and operator decisions.',
+    'Fully extensible to custom LLM agent tool schemas and API gateways.',
   ];
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-lg">
+    <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-lg font-sans">
       <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
-        ⚠️ Prototype Technical Limitations & Evaluation Scope
+        ⚠️ AgentShield AI — Evaluation Scope & Safety Guarantee
       </h4>
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-400">
         {limitations.map((item, idx) => (

@@ -1,7 +1,7 @@
 services:
-  # Backend FastAPI Service
+  # AgentShield Backend FastAPI Service
   - type: web
-    name: cineguard-backend
+    name: agentshield-backend
     runtime: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: uvicorn backend.alert_api:app --host 0.0.0.0 --port $PORT
@@ -11,9 +11,9 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
 
-  # Frontend Static Site
+  # AgentShield Frontend Static Site
   - type: web
-    name: cineguard-frontend
+    name: agentshield-frontend
     runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist

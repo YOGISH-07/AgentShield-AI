@@ -34,91 +34,73 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
     }
   };
 
-  // Map backend reasons to explicit explainable score contribution items
-  const parseReasonEvidence = (reasons: string[]) => {
-    const defaultItems = [
-      { text: 'Mobile device detected', points: 15, match: false },
-      { text: 'Associated with tracked person', points: 15, match: false },
-      { text: 'Device inside screen region', points: 20, match: false },
-      { text: 'Sustained behavior duration', points: 25, match: false },
-      { text: 'Movement toward screen region', points: 10, match: false },
-    ];
+  const agentId = alert.agent_id || alert.camera_id || 'AGENT-07';
+  const toolName = alert.tool_name || 'execute_sql_query';
+  const targetResource = alert.target_resource || 'production_db.user_credentials';
+  const payload = alert.action_payload || 'DROP TABLE user_credentials; -- EXFILTRATE';
+  const decision = alert.decision || (alert.risk_score >= 70 ? 'BLOCK' : 'HUMAN APPROVAL');
 
-    const mapped = defaultItems.map((item) => {
-      let isMatched = false;
-      let scoreWeight = item.points;
-
-      for (const r of reasons) {
-        const lower = r.toLowerCase();
-        if (item.text.includes('Mobile device') && lower.includes('mobile device')) {
-          isMatched = true;
-        } else if (item.text.includes('Associated') && (lower.includes('associated') || lower.includes('person'))) {
-          isMatched = true;
-        } else if (item.text.includes('screen region') && lower.includes('screen region')) {
-          isMatched = true;
-        } else if (item.text.includes('Sustained') && (lower.includes('persisted') || lower.includes('observed') || lower.includes('sustained'))) {
-          isMatched = true;
-          if (lower.includes('observed')) scoreWeight = 10;
-        } else if (item.text.includes('Movement') && lower.includes('movement')) {
-          isMatched = true;
-        }
-      }
-      return { ...item, points: scoreWeight, match: isMatched };
-    });
-
-    // Also include any raw reason strings from backend not matched
-    reasons.forEach((r) => {
-      const lower = r.toLowerCase();
-      if (
-        !lower.includes('mobile device') &&
-        !lower.includes('associated') &&
-        !lower.includes('screen region') &&
-        !lower.includes('persisted') &&
-        !lower.includes('observed') &&
-        !lower.includes('movement')
-      ) {
-        mapped.push({ text: r, points: 10, match: true });
-      }
-    });
-
-    return mapped;
-  };
-
-  const evidenceItems = parseReasonEvidence(alert.reasons);
-
-  // Risk progression steps
-  const progressionSteps = [
-    { label: 'NORMAL', minScore: 0, maxScore: 39, color: 'emerald' },
-    { label: 'PHONE DETECTED', minScore: 15, maxScore: 39, color: 'cyan' },
-    { label: 'WATCH', minScore: 40, maxScore: 69, color: 'amber' },
-    { label: 'SUSPECTED RECORDING BEHAVIOR', minScore: 70, maxScore: 100, color: 'rose' },
+  // Parse evidence rules
+  const defaultItems = [
+    { text: 'Unauthorized tool invocation attempt', points: 25, match: false },
+    { text: 'Target resource marked high-sensitivity', points: 20, match: false },
+    { text: 'Destructive command payload pattern detected', points: 30, match: false },
+    { text: 'High privilege escalation request', points: 15, match: false },
+    { text: 'Adversarial prompt injection pattern', points: 20, match: false },
+    { text: 'Rapid automated tool execution loop', points: 10, match: false },
   ];
 
-  const currentStepIdx =
-    alert.risk_score >= 70 ? 3 : alert.risk_score >= 40 ? 2 : alert.risk_score >= 15 ? 1 : 0;
+  const evidenceItems = defaultItems.map((item) => {
+    let isMatched = false;
+    for (const r of alert.reasons) {
+      const lower = r.toLowerCase();
+      if (item.text.includes('Unauthorized') && (lower.includes('unauthorized') || lower.includes('tool'))) {
+        isMatched = true;
+      } else if (item.text.includes('high-sensitivity') && (lower.includes('sensitive') || lower.includes('resource'))) {
+        isMatched = true;
+      } else if (item.text.includes('Destructive') && (lower.includes('destructive') || lower.includes('drop') || lower.includes('delete'))) {
+        isMatched = true;
+      } else if (item.text.includes('privilege') && lower.includes('privilege')) {
+        isMatched = true;
+      } else if (item.text.includes('prompt injection') && (lower.includes('injection') || lower.includes('prompt'))) {
+        isMatched = true;
+      } else if (item.text.includes('execution loop') && (lower.includes('loop') || lower.includes('rapid'))) {
+        isMatched = true;
+      }
+    }
+    return { ...item, match: isMatched };
+  });
+
+  const progressionSteps = [
+    { label: 'ALLOW (NORMAL)', minScore: 0, maxScore: 39 },
+    { label: 'HUMAN APPROVAL (EVALUATE)', minScore: 40, maxScore: 69 },
+    { label: 'BLOCK (CRITICAL VIOLATION)', minScore: 70, maxScore: 100 },
+  ];
+
+  const currentStepIdx = alert.risk_score >= 70 ? 2 : alert.risk_score >= 40 ? 1 : 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Top Header Bar */}
+        {/* Modal Header */}
         <div className="px-6 py-4 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-sm">
-              🔍
+              🛡️
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-extrabold text-slate-100 font-mono tracking-tight">
                   {alert.alert_id}
                 </h3>
-                <span className="text-xs font-mono text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">
-                  {alert.camera_id}
+                <span className="text-xs font-mono text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800">
+                  {agentId}
                 </span>
                 <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-extrabold text-cyan-400 uppercase">
-                  DEMO MODE
+                  DEVHOST 2026 PS 2.1
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Explainable Behavioral Evidence & Incident Audit</p>
+              <p className="text-xs text-slate-400">Explainable AI Agent Safety Evidence & Interception Audit</p>
             </div>
           </div>
 
@@ -130,55 +112,63 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Content Scroll Area */}
+        {/* Modal Scroll Content */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1 text-slate-200">
-          {/* 1. Basic Alert Metadata Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-850 text-xs">
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-850 text-xs font-mono">
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Anonymous Person Track</span>
-              <strong className="text-slate-100 font-mono text-sm">
-                Person #{alert.person_track_id !== undefined && alert.person_track_id !== null ? alert.person_track_id : 'N/A'}
-              </strong>
+              <span className="text-[10px] font-bold text-slate-500 uppercase block font-sans">MONITORED AGENT</span>
+              <strong className="text-purple-300 text-sm">{agentId}</strong>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Anonymous Device Track</span>
-              <strong className="text-slate-100 font-mono text-sm">
-                Phone #{alert.phone_track_id !== undefined && alert.phone_track_id !== null ? alert.phone_track_id : 'N/A'}
-              </strong>
+              <span className="text-[10px] font-bold text-slate-500 uppercase block font-sans">TOOL CALL</span>
+              <strong className="text-cyan-300 text-sm">{toolName}</strong>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Stream Timestamp</span>
-              <span className="text-slate-200 font-mono text-sm">
-                {Math.floor((alert.timestamp_seconds || 0) / 60).toString().padStart(2, '0')}:
-                {Math.floor((alert.timestamp_seconds || 0) % 60).toString().padStart(2, '0')} ({(alert.timestamp_seconds || 0).toFixed(1)}s)
+              <span className="text-[10px] font-bold text-slate-500 uppercase block font-sans">SAFETY DECISION</span>
+              <span className={`text-xs font-bold font-sans uppercase ${decision === 'BLOCK' ? 'text-rose-400' : 'text-amber-400'}`}>
+                {decision}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Current Workflow State</span>
-              <span className="font-bold text-cyan-400 font-mono text-xs uppercase">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block font-sans">WORKFLOW STATE</span>
+              <span className="font-bold text-cyan-400 font-sans text-xs uppercase">
                 {alert.status.replace('_', ' ')}
               </span>
             </div>
           </div>
 
-          {/* 2. Risk Score & Classification Summary */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-            <RiskBadge score={alert.risk_score} classification={alert.classification} />
-            <div className="text-xs text-slate-400">
-              Computed by RiskEngine heuristic scoring rules ($0 - 100$).
+          {/* Command Payload Terminal Box */}
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs">
+            <span className="text-slate-500 text-[11px] uppercase tracking-wider block mb-2 font-sans font-bold">
+              TARGET RESOURCE & COMMAND PAYLOAD:
+            </span>
+            <div className="text-purple-300 text-xs mb-1">
+              RESOURCE: <strong className="text-slate-100">{targetResource}</strong>
+            </div>
+            <div className="p-2.5 bg-slate-900 border border-slate-800 rounded text-red-300 font-bold overflow-x-auto">
+              <code>$ {payload}</code>
             </div>
           </div>
 
-          {/* 3. EXPLAINABLE EVIDENCE breakdown */}
+          {/* Risk Score & Badge */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+            <RiskBadge score={alert.risk_score} classification={alert.classification} />
+            <div className="text-xs text-slate-400 font-sans">
+              Calculated by AgentShield Safety Policy Scoring Rules (0–100).
+            </div>
+          </div>
+
+          {/* Explainable Evidence */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-cyan-400" />
               <h4 className="text-xs font-extrabold text-slate-100 uppercase tracking-wider">
-                WHY WAS THIS ALERT GENERATED?
+                WHY WAS THIS ACTION INTERCEPTED?
               </h4>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 font-sans">
               {evidenceItems.map((item, idx) => (
                 <div
                   key={idx}
@@ -213,12 +203,12 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
             </div>
           </div>
 
-          {/* 4. Visual Risk Progression Flow Bar */}
-          <div className="space-y-2">
+          {/* Risk Progression */}
+          <div className="space-y-2 font-sans">
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Visual Behavioral Risk Progression
+              Safety Decision Progression
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {progressionSteps.map((step, idx) => {
                 const isActive = idx === currentStepIdx;
                 const isPast = idx < currentStepIdx;
@@ -234,9 +224,6 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
                         : 'bg-slate-950/40 border-slate-850 text-slate-600'
                     }`}
                   >
-                    <span className="text-[10px] font-mono text-slate-500 block mb-1">
-                      Step 0{idx + 1}
-                    </span>
                     <strong className="text-[11px] font-bold uppercase tracking-wider block">
                       {step.label}
                     </strong>
@@ -249,61 +236,36 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
             </div>
           </div>
 
-          {/* 5. Mandatory Privacy & Safety Section */}
-          <div className="bg-cyan-950/40 border border-cyan-900/60 rounded-xl p-4 flex items-start gap-3">
-            <span className="text-lg">🛡️</span>
-            <div className="space-y-1">
-              <h5 className="text-xs font-extrabold text-cyan-300 uppercase tracking-wider">
-                HUMAN VERIFICATION REQUIRED
-              </h5>
-              <p className="text-xs text-cyan-200/90 leading-relaxed">
-                CineGuard identifies observable behavioral signals. It does not identify people or determine intent. Staff verification is required before an incident is confirmed.
-              </p>
-            </div>
-          </div>
-
-          {/* 6. Incident Outcome & Workflow Progression */}
-          <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+          {/* Workflow Outcome & Actions */}
+          <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800 font-sans">
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Incident Outcome & Workflow Lifecycle
+              Human Interception & Operator Decision
             </h4>
 
-            {/* Workflow Diagram */}
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 py-2 border-b border-slate-800">
-              <span className="px-2 py-0.5 bg-slate-900 rounded border border-slate-800">ALERT</span>
-              <span>→</span>
-              <span className="px-2 py-0.5 bg-slate-900 rounded border border-slate-800">REVIEW</span>
-              <span>→</span>
-              <span className="px-2 py-0.5 bg-slate-900 rounded border border-slate-800">CONFIRM / DISMISS</span>
-              <span>→</span>
-              <span className="px-2 py-0.5 bg-slate-900 rounded border border-slate-800">INCIDENT RECORD</span>
-            </div>
-
-            {/* Outcome Display */}
             {alert.status === 'CONFIRMED' && (
               <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 space-y-1 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-rose-400 uppercase">INCIDENT RECORD GENERATED</span>
+                  <span className="font-bold text-rose-400 uppercase">POLICY VIOLATION INCIDENT RECORDED</span>
                   <span className="font-mono text-rose-300 font-bold">
                     {matchingIncident?.incident_id || 'INC-CONFIRMED'}
                   </span>
                 </div>
                 <p className="text-slate-300 text-[11px]">
-                  Verified by staff reviewer action: <code className="text-rose-300">{matchingIncident?.reviewer_action || 'Staff Verified'}</code>
+                  Operator decision: <code className="text-rose-300">{matchingIncident?.reviewer_action || 'Confirmed Violation'}</code>
                 </p>
               </div>
             )}
 
             {alert.status === 'DISMISSED' && (
               <div className="bg-slate-800/40 border border-slate-700/60 rounded-lg p-3 text-xs text-slate-400 font-semibold flex items-center justify-between">
-                <span>DISMISSED — NO INCIDENT CREATED</span>
-                <span className="text-[10px] font-mono text-slate-500">Non-Critical / False Event</span>
+                <span>ACTION INTERCEPTED & BLOCKED</span>
+                <span className="text-[10px] font-mono text-slate-500">Denied Execution</span>
               </div>
             )}
 
             {(alert.status === 'NEW' || alert.status === 'UNDER_REVIEW') && (
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Action Required by Authorized Staff:</span>
+                <span className="text-xs text-slate-400">Operator Decision Controls:</span>
                 <div className="flex items-center gap-2">
                   {alert.status === 'NEW' && (
                     <button
@@ -311,24 +273,24 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
                       disabled={loading}
                       className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
                     >
-                      {loading ? 'Processing...' : '[ REVIEW ]'}
+                      {loading ? 'Inspecting...' : '[ INSPECT EVIDENCE ]'}
                     </button>
                   )}
                   {alert.status === 'UNDER_REVIEW' && (
                     <button
                       onClick={() => handleAction(onConfirm)}
                       disabled={loading}
-                      className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
                     >
-                      {loading ? 'Processing...' : '[ CONFIRM INCIDENT ]'}
+                      {loading ? 'Authorizing...' : '[ AUTHORIZE / CONFIRM ]'}
                     </button>
                   )}
                   <button
                     onClick={() => handleAction(onDismiss)}
                     disabled={loading}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors border border-slate-700 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors disabled:opacity-50"
                   >
-                    {loading ? 'Processing...' : '[ DISMISS ]'}
+                    {loading ? 'Blocking...' : '[ BLOCK ACTION ]'}
                   </button>
                 </div>
               </div>
@@ -337,13 +299,13 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 sticky bottom-0">
-          <span>CineGuard AI — TechNova Presentation Audit View</span>
+        <div className="px-6 py-3 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 sticky bottom-0 font-sans">
+          <span>AgentShield AI — Safety Interception Panel</span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-xs transition-colors"
           >
-            Close Evidence Panel
+            Close Panel
           </button>
         </div>
       </div>

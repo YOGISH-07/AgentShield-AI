@@ -39,14 +39,18 @@ export const AlertCard: React.FC<AlertCardProps> = ({
     DISMISSED: 'bg-slate-700/30 text-slate-400 border-slate-700',
   };
 
-  const isHighRisk = alert.risk_score >= 70;
+  const isCritical = alert.risk_score >= 70;
+  const agentId = alert.agent_id || alert.camera_id || 'AGENT-07';
+  const toolName = alert.tool_name || 'execute_sql_query';
+  const targetResource = alert.target_resource || 'production_db.user_credentials';
+  const decision = alert.decision || (isCritical ? 'BLOCK' : 'HUMAN APPROVAL');
 
   return (
     <div
       className={`bg-slate-900 border rounded-xl p-5 shadow-xl transition-all flex flex-col justify-between gap-4 ${
         isDemoAlertActive
           ? 'border-rose-500 ring-2 ring-rose-500/80 shadow-rose-500/30 shadow-2xl animate-pulse'
-          : isHighRisk
+          : isCritical
           ? 'border-rose-500/40 shadow-rose-950/20 ring-1 ring-rose-500/20'
           : 'border-slate-800'
       }`}
@@ -56,7 +60,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({
         {isDemoAlertActive && (
           <div className="mb-3 px-2.5 py-1 rounded bg-rose-600/30 border border-rose-500 text-[10px] font-extrabold text-rose-300 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
             <span className="animate-ping">🚨</span>
-            <span>LIVE DEMO STREAM MATCH (12s–20s)</span>
+            <span>LIVE INTERCEPTION MATCH (~12s DESTRUCTIVE ACTION)</span>
           </div>
         )}
 
@@ -66,7 +70,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({
             <span className="font-mono text-xs font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
               {alert.alert_id}
             </span>
-            <span className="text-xs text-slate-400 font-semibold">{alert.camera_id}</span>
+            <span className="text-xs text-purple-300 font-semibold font-mono">{agentId}</span>
           </div>
 
           <span
@@ -81,38 +85,33 @@ export const AlertCard: React.FC<AlertCardProps> = ({
         {/* Title & Badge */}
         <div className="mb-3 space-y-1.5">
           <h4 className="text-sm font-extrabold text-slate-100 flex items-center gap-1.5">
-            {isHighRisk ? '🚨 SUSPECTED RECORDING BEHAVIOR' : 'WATCH BEHAVIOR MONITOR'}
+            {isCritical ? '🚨 CRITICAL POLICY INTERCEPTION' : '⚠️ SENSITIVE ACTION REVIEW'}
           </h4>
           <RiskBadge score={alert.risk_score} classification={alert.classification} />
         </div>
 
-        {/* Target Tracks & Timestamp */}
-        <div className="text-xs text-slate-400 space-y-1 my-3 bg-slate-950/40 p-2.5 rounded border border-slate-850">
+        {/* Agent Metadata */}
+        <div className="text-xs text-slate-400 space-y-1 my-3 bg-slate-950/40 p-2.5 rounded border border-slate-850 font-mono">
           <div className="flex justify-between">
-            <span>Anonymous Person Track:</span>
-            <strong className="text-slate-200 font-mono">
-              Person #{alert.person_track_id !== undefined && alert.person_track_id !== null ? alert.person_track_id : 'N/A'}
-            </strong>
+            <span>TOOL CALL:</span>
+            <strong className="text-cyan-300">{toolName}</strong>
           </div>
           <div className="flex justify-between">
-            <span>Anonymous Device Track:</span>
-            <strong className="text-slate-200 font-mono">
-              Phone #{alert.phone_track_id !== undefined && alert.phone_track_id !== null ? alert.phone_track_id : 'N/A'}
-            </strong>
+            <span>TARGET RESOURCE:</span>
+            <strong className="text-purple-300">{targetResource}</strong>
           </div>
           <div className="flex justify-between">
-            <span>Stream Timestamp:</span>
-            <span className="font-mono text-slate-300">
-              {Math.floor((alert.timestamp_seconds || 0) / 60).toString().padStart(2, '0')}:
-              {Math.floor((alert.timestamp_seconds || 0) % 60).toString().padStart(2, '0')}
-            </span>
+            <span>DECISION:</span>
+            <strong className={decision === 'BLOCK' ? 'text-rose-400' : 'text-amber-400'}>
+              {decision}
+            </strong>
           </div>
         </div>
 
         {/* Observed Reasons List */}
         <div className="bg-slate-950/80 rounded-lg p-3 border border-slate-800 mb-3">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-            Observed Behavioral Reasons:
+            Evaluated Policy Reasons:
           </p>
           <ul className="text-xs text-slate-300 space-y-1">
             {alert.reasons.map((reason, idx) => (
@@ -126,18 +125,18 @@ export const AlertCard: React.FC<AlertCardProps> = ({
 
         {/* Human Verification Badge */}
         <div className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-400 text-center uppercase tracking-wider">
-          HUMAN VERIFICATION REQUIRED
+          OPERATOR INTERCEPTION CONTROL REQUIRED
         </div>
       </div>
 
-      {/* Interactive Workflow Buttons & Details View */}
+      {/* Interactive Workflow Buttons */}
       <div className="pt-3 border-t border-slate-800 flex flex-col gap-2">
         {onSelectAlert && (
           <button
             onClick={() => onSelectAlert(alert)}
             className="w-full py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-800/80 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
           >
-            <span>🔍</span> VIEW EXPLAINABLE EVIDENCE
+            <span>🔍</span> VIEW SAFETY EVIDENCE
           </button>
         )}
 
@@ -149,14 +148,14 @@ export const AlertCard: React.FC<AlertCardProps> = ({
                 disabled={loading}
                 className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
               >
-                {loading ? '[ REVIEWING... ]' : '[ REVIEW ]'}
+                {loading ? '[ INSPECTING... ]' : '[ INSPECT ]'}
               </button>
               <button
                 onClick={() => handleAction(onDismiss)}
                 disabled={loading}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors border border-slate-700 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors disabled:opacity-50"
               >
-                {loading ? '[ DISMISSING... ]' : '[ DISMISS ]'}
+                {loading ? '[ BLOCKING... ]' : '[ BLOCK ACTION ]'}
               </button>
             </>
           )}
@@ -166,23 +165,23 @@ export const AlertCard: React.FC<AlertCardProps> = ({
               <button
                 onClick={() => handleAction(onConfirm)}
                 disabled={loading}
-                className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
+                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
               >
-                {loading ? '[ CONFIRMING... ]' : '[ CONFIRM INCIDENT ]'}
+                {loading ? '[ AUTHORIZING... ]' : '[ AUTHORIZE / CONFIRM ]'}
               </button>
               <button
                 onClick={() => handleAction(onDismiss)}
                 disabled={loading}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors border border-slate-700 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors disabled:opacity-50"
               >
-                {loading ? '[ DISMISSING... ]' : '[ DISMISS ]'}
+                {loading ? '[ BLOCKING... ]' : '[ BLOCK ACTION ]'}
               </button>
             </>
           )}
 
           {(alert.status === 'CONFIRMED' || alert.status === 'DISMISSED') && (
             <span className="text-xs text-slate-500 font-mono italic">
-              Workflow Action Completed
+              {alert.status === 'CONFIRMED' ? 'Confirmed & Logged' : 'Blocked & Intercepted'}
             </span>
           )}
         </div>

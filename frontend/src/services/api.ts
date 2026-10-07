@@ -8,6 +8,7 @@ export interface HealthResponse {
   status: string;
   service: string;
   human_verification_required: boolean;
+  mode: string;
 }
 
 export interface OperationalStats {
@@ -18,15 +19,33 @@ export interface OperationalStats {
   false_alarm_rate: number;
 }
 
+export interface AgentActionStream {
+  timestamp_seconds: number;
+  agent_id: string;
+  tool_name: string;
+  target_resource: string;
+  action_payload: string;
+  risk_score: number;
+  classification: string;
+  decision: 'ALLOW' | 'HUMAN APPROVAL' | 'BLOCK';
+  reasons: string[];
+  human_verification_required: boolean;
+}
+
 export interface AlertItem {
   id: number;
   alert_id: string;
   camera_id: string;
+  agent_id?: string;
+  tool_name?: string;
+  target_resource?: string;
+  action_payload?: string;
   timestamp_seconds: number;
   person_track_id: number;
   phone_track_id: number;
   risk_score: number;
   classification: string;
+  decision?: 'ALLOW' | 'HUMAN APPROVAL' | 'BLOCK';
   reasons: string[];
   status: 'NEW' | 'UNDER_REVIEW' | 'CONFIRMED' | 'DISMISSED';
   created_at: string;
@@ -40,6 +59,9 @@ export interface IncidentItem {
   incident_id: string;
   alert_id: string;
   camera_id: string;
+  agent_id?: string;
+  tool_name?: string;
+  target_resource?: string;
   timestamp_seconds: number;
   risk_score_at_alert: number;
   reasons: string[];
@@ -58,6 +80,12 @@ export async function fetchHealth(): Promise<HealthResponse> {
 export async function fetchStats(): Promise<OperationalStats> {
   const res = await fetch(`${API_BASE_URL}/api/stats`);
   if (!res.ok) throw new Error('Failed to fetch stats');
+  return res.json();
+}
+
+export async function fetchAgentStream(elapsedSeconds: number): Promise<AgentActionStream> {
+  const res = await fetch(`${API_BASE_URL}/api/agent/stream?elapsed_seconds=${elapsedSeconds}`);
+  if (!res.ok) throw new Error('Failed to fetch agent action stream');
   return res.json();
 }
 
@@ -80,7 +108,7 @@ export async function reviewAlert(alertId: string): Promise<AlertItem> {
   const res = await fetch(`${API_BASE_URL}/api/alerts/${encodeURIComponent(alertId)}/review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reviewer_action: 'Security Review Started' }),
+    body: JSON.stringify({ reviewer_action: 'Security Operator Inspection' }),
   });
   if (!res.ok) throw new Error('Failed to start alert review');
   return res.json();
@@ -90,7 +118,7 @@ export async function confirmAlert(alertId: string): Promise<AlertItem> {
   const res = await fetch(`${API_BASE_URL}/api/alerts/${encodeURIComponent(alertId)}/confirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reviewer_action: 'Confirmed Staff Verification' }),
+    body: JSON.stringify({ reviewer_action: 'APPROVE / Authorize Policy Violation' }),
   });
   if (!res.ok) throw new Error('Failed to confirm alert incident');
   return res.json();
@@ -100,7 +128,7 @@ export async function dismissAlert(alertId: string): Promise<AlertItem> {
   const res = await fetch(`${API_BASE_URL}/api/alerts/${encodeURIComponent(alertId)}/dismiss`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reviewer_action: 'Dismissed Non-Critical' }),
+    body: JSON.stringify({ reviewer_action: 'BLOCK / Deny Agent Action' }),
   });
   if (!res.ok) throw new Error('Failed to dismiss alert');
   return res.json();

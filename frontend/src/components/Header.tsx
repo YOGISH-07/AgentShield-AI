@@ -12,19 +12,19 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, lastUpdated }) => {
         <div>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-lg shadow-sm">
-              CG
+              🛡️
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold tracking-wider text-slate-100 uppercase">
-                  CINEGUARD <span className="text-cyan-400">AI</span>
+                  AGENTSHIELD <span className="text-cyan-400">AI</span>
                 </h1>
                 <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest">
-                  ● DEMO MODE
+                  ● DEVHOST 2026 PS 2.1 MVP
                 </span>
               </div>
               <p className="text-xs text-slate-400 tracking-wide font-medium">
-                Cinema Security Intelligence — Using synthetic test footage for computer-vision validation.
+                AI Agent Safety & Interception Control System — Real-time Action Monitoring & Explainable Policy Interception.
               </p>
             </div>
           </div>
@@ -38,13 +38,13 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, lastUpdated }) => {
               }`}
             />
             <span className={`font-semibold ${isOnline ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {isOnline ? '● SYSTEM OPERATIONAL' : '● BACKEND OFFLINE'}
+              {isOnline ? '● SAFETY ENGINE OPERATIONAL' : '● CONTROL BACKEND OFFLINE'}
             </span>
           </div>
 
           {lastUpdated && (
             <div className="text-xs text-slate-500 hidden sm:block font-mono">
-              Updated: {lastUpdated.toLocaleTimeString()}
+              Telemetry: {lastUpdated.toLocaleTimeString()}
             </div>
           )}
         </div>

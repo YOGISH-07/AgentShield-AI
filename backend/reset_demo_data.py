@@ -1,68 +1,32 @@
-import os
 import sys
-import sqlite3
 from pathlib import Path
 
-# Ensure backend directory is in python path
-current_dir = Path(__file__).resolve().parent
-if str(current_dir) not in sys.path:
-    sys.path.insert(0, str(current_dir))
+# Add backend directory to sys.path
+backend_dir = Path(__file__).resolve().parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
-project_root = current_dir.parent
+project_root = backend_dir.parent
+from database import DatabaseManager
 
 
-def reset_demo_database(db_path: str = "data/cineguard.db", force: bool = False) -> bool:
+def reset_demo_database(db_path: str = None, force: bool = True):
     """
-    Safely reset prototype demo data from SQLite database for repeated evaluation runs.
-    Clears rows from 'alerts' and 'incidents' tables while preserving database schema.
-
-    :param db_path: Path to SQLite database.
-    :param force: If True, bypasses interactive confirmation prompt.
-    :return: True if reset was executed.
+    Clear alerts and incidents tables and re-seed clean demonstration state.
     """
-    target_db = project_root / db_path if not Path(db_path).is_absolute() else Path(db_path)
+    if db_path is None:
+        db_path = str(project_root / "data" / "agentshield.db")
 
-    if not target_db.exists():
-        print(f"[RESET] Database file '{target_db}' does not exist. Nothing to reset.")
-        return False
+    db = DatabaseManager(db_path=db_path)
+    db.clear_all_data()
 
     print("==================================================")
-    print("      CINEGUARD AI - DEMO DATA RESET UTILITY      ")
+    print("    AGENTSHIELD AI - DEMO DATA RESET UTILITY      ")
     print("==================================================")
-    print(f"Target Database : {target_db}")
-    print("WARNING: This action will clear prototype alerts and incidents")
-    print("from the SQLite database while retaining the schema structure.")
-    print("--------------------------------------------------")
-
-    if not force:
-        try:
-            confirm = input("Type 'RESET' to confirm prototype data deletion: ").strip()
-            if confirm != "RESET":
-                print("Reset cancelled. No data modified.")
-                return False
-        except (EOFError, KeyboardInterrupt):
-            print("\nReset cancelled.")
-            return False
-
-    try:
-        conn = sqlite3.connect(str(target_db))
-        cursor = conn.cursor()
-        
-        c_inc = cursor.execute("DELETE FROM incidents").rowcount
-        c_alt = cursor.execute("DELETE FROM alerts").rowcount
-        cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('alerts', 'incidents')")
-        
-        conn.commit()
-        conn.close()
-
-        print(f"[SUCCESS] Cleared {c_alt} prototype alert(s) and {c_inc} incident(s).")
-        print(f"[SUCCESS] Database schema preserved. Database ready for new demo run.\n")
-        return True
-    except Exception as e:
-        print(f"[ERROR] Reset failed: {e}")
-        return False
+    print(f"Target Database : {db_path}")
+    print("[SUCCESS] Cleared alerts and incidents.")
+    print("[SUCCESS] Database ready for AgentShield AI demonstration.")
 
 
 if __name__ == "__main__":
-    force_flag = "--force" in sys.argv or "-f" in sys.argv
-    reset_demo_database(force=force_flag)
+    reset_demo_database(force=True)

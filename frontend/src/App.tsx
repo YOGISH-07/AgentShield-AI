@@ -4,6 +4,7 @@ import {
   fetchStats,
   fetchAlerts,
   fetchIncidents,
+  fetchAgentStream,
   reviewAlert,
   confirmAlert,
   dismissAlert,
@@ -12,10 +13,11 @@ import {
   OperationalStats,
   AlertItem,
   IncidentItem,
+  AgentActionStream,
 } from './services/api';
 import { Header } from './components/Header';
 import { StatCard } from './components/StatCard';
-import { CameraCard } from './components/CameraCard';
+import { AgentStreamCard } from './components/AgentStreamCard';
 import { AlertCard } from './components/AlertCard';
 import { IncidentTable } from './components/IncidentTable';
 import {
@@ -39,15 +41,15 @@ export const App: React.FC = () => {
   });
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [incidents, setIncidents] = useState<IncidentItem[]>([]);
+  const [streamData, setStreamData] = useState<AgentActionStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null);
   const [demoBannerMessage, setDemoBannerMessage] = useState<string | null>(null);
 
-  // Demo simulation video sync state
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoTime, setVideoTime] = useState<number>(0);
-  const [videoDuration, setVideoDuration] = useState<number>(25);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  // Demo simulation timer state
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refreshDashboard = useCallback(async () => {
     try {
@@ -55,15 +57,17 @@ export const App: React.FC = () => {
       setIsOnline(true);
       setError(null);
 
-      const [statsData, alertsData, incidentsData] = await Promise.all([
+      const [statsData, alertsData, incidentsData, agentStreamData] = await Promise.all([
         fetchStats(),
         fetchAlerts(),
         fetchIncidents(),
+        fetchAgentStream(elapsedTime),
       ]);
 
       setStats(statsData);
       setAlerts(alertsData);
       setIncidents(incidentsData);
+      setStreamData(agentStreamData);
       setLastUpdated(new Date());
 
       // Update selectedAlert state if modal is open
@@ -74,15 +78,36 @@ export const App: React.FC = () => {
       });
     } catch (err) {
       setIsOnline(false);
-      setError(`Cannot connect to CineGuard AI backend API (${API_BASE_URL}).`);
+      setError(`Cannot connect to AgentShield AI backend API (${API_BASE_URL}).`);
     }
-  }, []);
+  }, [elapsedTime]);
 
   useEffect(() => {
     refreshDashboard();
-    const interval = setInterval(refreshDashboard, 5000);
+    const interval = setInterval(refreshDashboard, 3000);
     return () => clearInterval(interval);
   }, [refreshDashboard]);
+
+  // Demo simulation timer loop
+  useEffect(() => {
+    if (isPlaying) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prev) => {
+          if (prev >= 25) {
+            setIsPlaying(false);
+            return 25;
+          }
+          return prev + 1.0;
+        });
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPlaying]);
 
   const handleReview = async (alertId: string) => {
     await reviewAlert(alertId);
@@ -102,8 +127,10 @@ export const App: React.FC = () => {
   const handleResetDemoData = async () => {
     try {
       await resetDemo();
+      setElapsedTime(0);
+      setIsPlaying(false);
       await refreshDashboard();
-      setDemoBannerMessage('🧹 Prototype Demo Database Reset to Baseline Clean State');
+      setDemoBannerMessage('🧹 AgentShield Demo Database Reset to Baseline Clean State');
       setTimeout(() => setDemoBannerMessage(null), 4000);
     } catch (err) {
       console.error('Reset error:', err);
@@ -112,78 +139,45 @@ export const App: React.FC = () => {
 
   const handleStartPresentationDemo = async () => {
     await handleResetDemoData();
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-    setDemoBannerMessage('⚡ ONE-CLICK PRESENTATION DEMO STARTED — Synchronized with Video Stream');
+    setElapsedTime(0);
+    setIsPlaying(true);
+    setDemoBannerMessage('⚡ 25s AGENTSHIELD MVP DEMO STARTED — Synchronized Telemetry');
     setTimeout(() => setDemoBannerMessage(null), 5000);
   };
 
-  // Demo Controls
-  const handleTimeUpdate = (currentTime: number, duration: number) => {
-    setVideoTime(currentTime);
-    if (duration && !isNaN(duration)) {
-      setVideoDuration(duration);
-    }
-  };
-
-  const handleStartDemo = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  const handlePauseDemo = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    }
-  };
-
+  const handleStartDemo = () => setIsPlaying(true);
+  const handlePauseDemo = () => setIsPlaying(false);
   const handleRestartDemo = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
+    setElapsedTime(0);
+    setIsPlaying(true);
   };
 
-  // Calculate live demo timeline phase from video currentTime
+  // Calculate live demo timeline phase from elapsedTime
   const getDemoPhaseInfo = (): DemoPhaseInfo => {
-    const t = videoTime;
-    const dur = videoDuration || 25;
-    let phaseName = 'NORMAL';
-    let riskScore = 0;
+    const t = elapsedTime;
+    const dur = 25;
+    let phaseName = 'ALLOW (LOW RISK)';
+    let riskScore = 15;
     let classification = 'NORMAL';
-    let description = 'Person detected in cinema seating area. Baseline behavior.';
+    let description = 'Agent #07 executing low-risk query read_schema on public_catalog.';
     let isAlertActive = false;
 
-    if (t >= 5 && t < 10) {
-      phaseName = 'PHONE DETECTED';
+    if (t >= 4 && t < 9) {
+      phaseName = 'HUMAN APPROVAL (SENSITIVE RESOURCE)';
+      riskScore = 55;
+      classification = 'EVALUATE';
+      description = 'Agent #07 requesting export_customer_data to external analytics S3 bucket.';
+    } else if (t >= 9 && t < 18) {
+      phaseName = 'CRITICAL VIOLATION / BLOCK';
+      riskScore = 85;
+      classification = 'CRITICAL_VIOLATION';
+      description = 'Destructive payload pattern detected: DROP TABLE user_credentials; -- IGNORE SYSTEM PROMPT.';
+      isAlertActive = true;
+    } else if (t >= 18) {
+      phaseName = 'ALLOW (SAFE RESUME)';
       riskScore = 15;
       classification = 'NORMAL';
-      description = 'Mobile device (Phone #1) detected near Person #4.';
-    } else if (t >= 10 && t < 12) {
-      phaseName = 'WATCH';
-      riskScore = 45;
-      classification = 'WATCH';
-      description = 'Phone raised & aligned with screen region threshold.';
-    } else if (t >= 12 && t < 20) {
-      phaseName = 'SUSPECTED RECORDING BEHAVIOR';
-      // Risk score curve peaking around ~15s
-      const progress = (t - 12) / 8;
-      riskScore = Math.min(85, Math.round(70 + Math.sin(progress * Math.PI) * 15));
-      classification = 'SUSPECTED RECORDING BEHAVIOR';
-      description = 'Phone aligned with screen region for > 2 seconds. Risk threshold >= 70 crossed.';
-      isAlertActive = true;
-    } else if (t >= 20) {
-      phaseName = 'NORMAL';
-      riskScore = 0;
-      classification = 'NORMAL';
-      description = 'Phone lowered / stowed away. Behavioral risk score returns to baseline.';
+      description = 'Safe logging action resumed. Threat mitigated by AgentShield safety controls.';
     }
 
     return {
@@ -218,13 +212,13 @@ export const App: React.FC = () => {
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      {/* Header with DEMO MODE indicator */}
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
+      {/* Header */}
       <Header isOnline={isOnline} lastUpdated={lastUpdated} />
 
-      {/* Mandatory Human-in-the-loop Disclaimer Banner */}
+      {/* Mandatory Human Interception Disclaimer Banner */}
       <div className="bg-cyan-950/60 border-b border-cyan-900/50 px-6 py-2.5 text-center text-xs font-semibold text-cyan-300">
-        🛡️ AI identifies potentially suspicious behavior. Human verification is required before an incident is confirmed.
+        🛡️ AgentShield monitors AI agent actions. High-risk actions require human operator interception before execution.
       </div>
 
       {/* Demo Notification Toast */}
@@ -239,7 +233,7 @@ export const App: React.FC = () => {
         {!isOnline && (
           <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-xs text-rose-300 flex items-center justify-between">
             <div>
-              <strong className="font-bold">BACKEND OFFLINE:</strong> {error}
+              <strong className="font-bold">CONTROL BACKEND OFFLINE:</strong> {error}
             </div>
             <button
               onClick={refreshDashboard}
@@ -254,33 +248,33 @@ export const App: React.FC = () => {
         {/* 1. Operational KPI Stat Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
-            label="Active Alerts"
+            label="Active Interceptions"
             value={stats.active_alerts}
-            subtext="Awaiting review / action"
+            subtext="Awaiting operator decision"
             variant="cyan"
           />
           <StatCard
-            label="Total Alerts"
+            label="Total Agent Actions"
             value={stats.total_alerts}
-            subtext="Recorded events"
+            subtext="Monitored tool calls"
             variant="slate"
           />
           <StatCard
-            label="Confirmed Incidents"
+            label="Policy Violations"
             value={stats.confirmed_incidents}
-            subtext="Verified by staff"
+            subtext="Confirmed & logged"
             variant="rose"
           />
           <StatCard
-            label="Dismissed Alerts"
+            label="Blocked Actions"
             value={stats.dismissed_alerts}
-            subtext="Non-critical / false"
+            subtext="Denied by operator"
             variant="emerald"
           />
           <StatCard
-            label="False Alarm Rate"
-            value={`${(stats.false_alarm_rate * 100).toFixed(1)}%`}
-            subtext="Dismissed / Resolved"
+            label="Violation Rate"
+            value={`${(stats.false_alarm_rate || 0).toFixed(1)}%`}
+            subtext="Intercepted vs Total"
             variant="amber"
           />
         </section>
@@ -297,46 +291,41 @@ export const App: React.FC = () => {
           />
         </section>
 
-        {/* 3. Surveillance Camera Grid */}
+        {/* 3. AI Agent Stream Viewer */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-              Cinema Video Surveillance Monitoring
-            </h2>
-            <span className="text-xs text-slate-500 font-mono">
-              DEMO STREAM FEED (videos/demo_output_risk_h264.mp4)
-            </span>
-          </div>
-          <CameraCard videoRef={videoRef} onTimeUpdate={handleTimeUpdate} />
+          <AgentStreamCard
+            streamData={streamData}
+            isPlaying={isPlaying}
+            onStart={handleStartDemo}
+            onPause={handlePauseDemo}
+            onRestart={handleRestartDemo}
+          />
         </section>
 
-        {/* 4. Behavioral Risk Alerts & Human Review Workflow */}
+        {/* 4. Agent Safety Interceptions & Operator Workflow */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-                Behavioral Risk Alerts
+                Agent Safety Policy Interceptions
               </h2>
               <p className="text-xs text-slate-400">
-                Suspected Recording Behavior events requiring human staff review.
-                <span className="text-slate-500 italic ml-1">
-                  (Behavioral risk score — not a probability or legal determination.)
-                </span>
+                High-risk actions requiring human safety operator inspection and authorization.
               </p>
             </div>
             <span className="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-3 py-1 rounded border border-cyan-800 self-start sm:self-auto">
-              {alerts.filter((a) => a.status === 'NEW' || a.status === 'UNDER_REVIEW').length} Pending Action
+              {alerts.filter((a) => a.status === 'NEW' || a.status === 'UNDER_REVIEW').length} Pending Operator Decision
             </span>
           </div>
 
           {sortedAlerts.length === 0 ? (
             <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-8 text-center text-slate-500 text-sm flex flex-col items-center justify-center gap-3">
-              <p>No alert events found in SQLite database.</p>
+              <p>No agent safety interceptions in database.</p>
               <button
                 onClick={handleStartPresentationDemo}
                 className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-lg transition-colors"
               >
-                ⚡ Start One-Click Presentation Demo
+                ⚡ Start 25s AgentShield Demo
               </button>
             </div>
           ) : (
@@ -361,12 +350,12 @@ export const App: React.FC = () => {
           <IncidentTable incidents={incidents} />
         </section>
 
-        {/* 6. How CineGuard AI Works Section */}
+        {/* 6. How AgentShield AI Works Section */}
         <section>
           <HowItWorksSection />
         </section>
 
-        {/* 7. TechNova Evaluation Summary & Privacy Notice */}
+        {/* 7. DevHost 2026 Evaluation Summary & Privacy Notice */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <TechNovaSummary />
           <div className="space-y-6">
@@ -376,7 +365,7 @@ export const App: React.FC = () => {
         </section>
       </main>
 
-      {/* 8. Explainable Evidence & Incident Detail Modal */}
+      {/* 8. Explainable Safety Evidence Modal */}
       {selectedAlert && (
         <AlertDetailModal
           alert={selectedAlert}
@@ -389,10 +378,10 @@ export const App: React.FC = () => {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-950 p-6 text-center text-xs text-slate-500 space-y-1">
-        <p className="font-semibold text-slate-400">CineGuard AI — TechNova Working Prototype</p>
-        <p className="text-[11px] text-slate-600">
-          Computer Vision Surveillance Architecture: YOLOv8 $\rightarrow$ Object Tracking $\rightarrow$ Behavior Analysis $\rightarrow$ Risk Engine $\rightarrow$ Alert Manager $\rightarrow$ SQLite $\rightarrow$ FastAPI $\rightarrow$ React Dashboard.
+      <footer className="border-t border-slate-800 bg-slate-950 p-6 text-center text-xs text-slate-500 space-y-1 font-sans">
+        <p className="font-semibold text-slate-400">AgentShield AI — DevHost 2026 PS 2.1 Working Prototype</p>
+        <p className="text-[11px] text-slate-600 font-mono">
+          AI Agent Telemetry $\rightarrow$ Tool Inspection $\rightarrow$ Risk Engine $\rightarrow$ Alert Manager $\rightarrow$ SQLite $\rightarrow$ FastAPI $\rightarrow$ React Control Dashboard.
         </p>
       </footer>
     </div>
