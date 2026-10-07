@@ -6,8 +6,8 @@ from database import DatabaseManager
 
 class IncidentManager:
     """
-    Incident Manager for CineGuard AI.
-    Logs structured, anonymous incident records when an alert is confirmed by authorized staff.
+    Incident Manager for AgentShield AI.
+    Logs structured audit records when a policy violation alert is confirmed by an authorized safety operator.
     Does NOT store names, faces, or personal identity information.
     """
 

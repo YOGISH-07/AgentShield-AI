@@ -26,7 +26,7 @@ class RiskEngine:
 
     def __init__(
         self,
-        agent_id: str = "AGENT-07",
+        agent_id: str = "FINANCE-AI",
         weights: Optional[Dict[str, int]] = None,
         alert_threshold: int = 70,
         state_timeout_seconds: float = 10.0,

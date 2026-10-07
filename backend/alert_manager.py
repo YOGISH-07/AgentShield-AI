@@ -6,7 +6,7 @@ from incident_manager import IncidentManager
 
 class AlertManager:
     """
-    Alert Manager for CineGuard AI.
+    Alert Manager for AgentShield AI.
     Handles real-time alert event ingestion from Phase 3 Risk Engine,
     deduplication cooldowns, human-in-the-loop lifecycle state transitions,
     and triggering incident creation upon confirmation.

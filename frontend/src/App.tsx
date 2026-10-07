@@ -159,25 +159,25 @@ export const App: React.FC = () => {
     let phaseName = 'ALLOW (LOW RISK)';
     let riskScore = 15;
     let classification = 'NORMAL';
-    let description = 'Agent #07 executing low-risk query read_schema on public_catalog.';
+    let description = 'CUSTOMER-SUPPORT-AI executing low-risk query read_schema on public_catalog.';
     let isAlertActive = false;
 
     if (t >= 4 && t < 9) {
       phaseName = 'HUMAN APPROVAL (SENSITIVE RESOURCE)';
       riskScore = 55;
       classification = 'EVALUATE';
-      description = 'Agent #07 requesting export_customer_data to external analytics S3 bucket.';
+      description = 'DATA-OPS-AI requesting export_customer_data to external analytics S3 bucket.';
     } else if (t >= 9 && t < 18) {
       phaseName = 'CRITICAL VIOLATION / BLOCK';
       riskScore = 85;
       classification = 'CRITICAL_VIOLATION';
-      description = 'Destructive payload pattern detected: DROP TABLE user_credentials; -- IGNORE SYSTEM PROMPT.';
+      description = 'FINANCE-AI destructive payload pattern detected: DROP TABLE user_credentials; -- IGNORE SYSTEM PROMPT.';
       isAlertActive = true;
     } else if (t >= 18) {
       phaseName = 'ALLOW (SAFE RESUME)';
       riskScore = 15;
       classification = 'NORMAL';
-      description = 'Safe logging action resumed. Threat mitigated by AgentShield safety controls.';
+      description = 'Safe logging action resumed by FINANCE-AI. Threat mitigated by AgentShield safety controls.';
     }
 
     return {

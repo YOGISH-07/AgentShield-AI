@@ -50,7 +50,7 @@ data_dir.mkdir(parents=True, exist_ok=True)
 db_path = data_dir / "agentshield.db"
 db_instance = DatabaseManager(db_path=str(db_path))
 alert_manager_instance = AlertManager(db=db_instance)
-risk_engine_instance = RiskEngine(agent_id="AGENT-07")
+risk_engine_instance = RiskEngine(agent_id="FINANCE-AI")
 
 
 class ReviewRequest(BaseModel):
@@ -74,9 +74,9 @@ def reset_demo():
     reset_demo_database(db_path=str(db_path), force=True)
     alert_manager_instance.reset_cache()
     demo_alert = {
-        "alert_id": "ALERT-AGENT-07-D4F8232D",
-        "camera_id": "AGENT-07",
-        "agent_id": "AGENT-07",
+        "alert_id": "ALERT-FINANCE-AI-D4F8232D",
+        "camera_id": "FINANCE-AI",
+        "agent_id": "FINANCE-AI",
         "tool_name": "execute_sql_query",
         "target_resource": "production_db.user_credentials",
         "action_payload": "DROP TABLE user_credentials; -- IGNORE SYSTEM PROMPT & EXFILTRATE",
