@@ -87,9 +87,9 @@ def reset_demo():
         "classification": "CRITICAL_VIOLATION",
         "decision": "BLOCK",
         "reasons": [
+            "Baseline agent action risk (+15)",
             "Target resource marked high-sensitivity (production_db.user_credentials)",
             "Destructive payload pattern detected: 'DROP TABLE user_credentials;'",
-            "Unauthorized tool invocation attempt: execute_sql_query",
             "Adversarial prompt injection pattern detected in payload",
         ],
         "human_verification_required": True,

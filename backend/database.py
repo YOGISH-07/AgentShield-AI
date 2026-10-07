@@ -10,7 +10,7 @@ class DatabaseManager:
     """
     SQLite Database Manager for AgentShield AI.
     Handles thread-safe parameterized storage for Agent Safety alerts and verified incidents
-    targeting data/agentshield.db (or cineguard.db fallback).
+    targeting data/agentshield.db.
     """
 
     def __init__(self, db_path: str = "data/agentshield.db"):

@@ -12,10 +12,11 @@ class RiskEngine:
 
     # Configurable Scoring Weights for AI Agent Safety Controls
     DEFAULT_WEIGHTS = {
+        "baseline_risk": 15,
         "unauthorized_tool": 25,
         "sensitive_resource": 20,
         "destructive_command": 30,
-        "high_privilege_scope": 15,
+        "high_privilege_scope": 20,
         "prompt_injection_signal": 20,
         "rapid_execution_loop": 10,
     }
@@ -112,8 +113,9 @@ class RiskEngine:
         state["action_count"] += 1
 
         # 1. Calculate Explainable Risk Score & Reasons
-        score = 0
-        reasons = []
+        base_risk = self.weights.get("baseline_risk", 15)
+        score = base_risk
+        reasons = ["Baseline agent action risk (+15)"]
 
         # Feature 1: Unauthorized or unlisted tool invocation
         if action_record.get("is_unauthorized_tool", False):
@@ -146,7 +148,7 @@ class RiskEngine:
             reasons.append("Adversarial prompt injection pattern detected in payload")
 
         # Feature 6: Rapid execution loop / rate anomaly
-        if action_record.get("execution_frequency", 1) >= 5 or state["action_count"] >= 10:
+        if action_record.get("is_rapid_execution_loop", False) or action_record.get("execution_frequency", 1) >= 5:
             pts = self.weights["rapid_execution_loop"]
             score += pts
             reasons.append("Rapid automated tool execution loop detected")

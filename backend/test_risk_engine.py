@@ -41,7 +41,7 @@ class TestRiskEngine(unittest.TestCase):
             "execution_frequency": 1,
         }
         assessment = self.engine.evaluate_record(record)
-        self.assertEqual(assessment["risk_score"], 0)
+        self.assertEqual(assessment["risk_score"], 15)
         self.assertEqual(assessment["classification"], "NORMAL")
         self.assertEqual(assessment["decision"], "ALLOW")
         self.assertIsNone(assessment["alert_event"])

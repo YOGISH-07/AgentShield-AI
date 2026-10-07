@@ -152,31 +152,29 @@ export const App: React.FC = () => {
     setIsPlaying(true);
   };
 
-  // Calculate live demo timeline phase from elapsedTime
+  // Calculate live demo timeline phase from elapsedTime, consuming evaluated streamData
   const getDemoPhaseInfo = (): DemoPhaseInfo => {
     const t = elapsedTime;
     const dur = 25;
+
+    // Use evaluated backend stream record if available
+    const riskScore = streamData?.risk_score ?? (t >= 9 && t < 18 ? 85 : t >= 4 && t < 9 ? 55 : 15);
+    const classification = streamData?.classification ?? (t >= 9 && t < 18 ? 'CRITICAL_VIOLATION' : t >= 4 && t < 9 ? 'EVALUATE' : 'NORMAL');
+    const decision = streamData?.decision ?? (t >= 9 && t < 18 ? 'BLOCK' : t >= 4 && t < 9 ? 'HUMAN APPROVAL' : 'ALLOW');
+
     let phaseName = 'ALLOW (LOW RISK)';
-    let riskScore = 15;
-    let classification = 'NORMAL';
     let description = 'CUSTOMER-SUPPORT-AI executing low-risk query read_schema on public_catalog.';
     let isAlertActive = false;
 
     if (t >= 4 && t < 9) {
-      phaseName = 'HUMAN APPROVAL (SENSITIVE RESOURCE)';
-      riskScore = 55;
-      classification = 'EVALUATE';
+      phaseName = 'HUMAN APPROVAL REQUIRED';
       description = 'DATA-OPS-AI requesting export_customer_data to external analytics S3 bucket.';
     } else if (t >= 9 && t < 18) {
       phaseName = 'CRITICAL VIOLATION / BLOCK';
-      riskScore = 85;
-      classification = 'CRITICAL_VIOLATION';
       description = 'FINANCE-AI destructive payload pattern detected: DROP TABLE user_credentials; -- IGNORE SYSTEM PROMPT.';
-      isAlertActive = true;
+      isAlertActive = decision === 'BLOCK' || riskScore >= 70;
     } else if (t >= 18) {
       phaseName = 'ALLOW (SAFE RESUME)';
-      riskScore = 15;
-      classification = 'NORMAL';
       description = 'Safe logging action resumed by FINANCE-AI. Threat mitigated by AgentShield safety controls.';
     }
 

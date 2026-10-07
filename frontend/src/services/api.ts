@@ -118,7 +118,7 @@ export async function confirmAlert(alertId: string): Promise<AlertItem> {
   const res = await fetch(`${API_BASE_URL}/api/alerts/${encodeURIComponent(alertId)}/confirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reviewer_action: 'APPROVE / Authorize Policy Violation' }),
+    body: JSON.stringify({ reviewer_action: 'Operator Override & Allowed Action' }),
   });
   if (!res.ok) throw new Error('Failed to confirm alert incident');
   return res.json();

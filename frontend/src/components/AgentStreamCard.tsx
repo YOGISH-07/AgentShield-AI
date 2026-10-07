@@ -17,12 +17,12 @@ export const AgentStreamCard: React.FC<AgentStreamCardProps> = ({
   onPause,
   onRestart,
 }) => {
-  const agentId = streamData?.agent_id || 'AGENT-07';
-  const toolName = streamData?.tool_name || 'execute_sql_query';
-  const targetResource = streamData?.target_resource || 'production_db.user_credentials';
-  const payload = streamData?.action_payload || 'DROP TABLE user_credentials; -- EXFILTRATE';
-  const riskScore = streamData?.risk_score ?? 85;
-  const decision = streamData?.decision || 'BLOCK';
+  const agentId = streamData?.agent_id || 'CUSTOMER-SUPPORT-AI';
+  const toolName = streamData?.tool_name || 'read_schema';
+  const targetResource = streamData?.target_resource || 'public_catalog';
+  const payload = streamData?.action_payload || 'SELECT table_name FROM information_schema.tables;';
+  const riskScore = streamData?.risk_score ?? 15;
+  const decision = streamData?.decision || 'ALLOW';
 
   const getDecisionBadge = (dec: string) => {
     if (dec === 'BLOCK') {

@@ -42,11 +42,12 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
 
   // Parse evidence rules
   const defaultItems = [
-    { text: 'Unauthorized tool invocation attempt', points: 25, match: false },
+    { text: 'Baseline agent action risk', points: 15, match: false },
     { text: 'Target resource marked high-sensitivity', points: 20, match: false },
     { text: 'Destructive command payload pattern detected', points: 30, match: false },
-    { text: 'High privilege escalation request', points: 15, match: false },
+    { text: 'High privilege escalation request', points: 20, match: false },
     { text: 'Adversarial prompt injection pattern', points: 20, match: false },
+    { text: 'Unauthorized tool invocation attempt', points: 25, match: false },
     { text: 'Rapid automated tool execution loop', points: 10, match: false },
   ];
 
@@ -54,7 +55,9 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
     let isMatched = false;
     for (const r of alert.reasons) {
       const lower = r.toLowerCase();
-      if (item.text.includes('Unauthorized') && (lower.includes('unauthorized') || lower.includes('tool'))) {
+      if (item.text.includes('Baseline') && (lower.includes('baseline') || lower.includes('base'))) {
+        isMatched = true;
+      } else if (item.text.includes('Unauthorized') && (lower.includes('unauthorized') || lower.includes('tool'))) {
         isMatched = true;
       } else if (item.text.includes('high-sensitivity') && (lower.includes('sensitive') || lower.includes('resource'))) {
         isMatched = true;
@@ -73,7 +76,7 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
 
   const progressionSteps = [
     { label: 'ALLOW (NORMAL)', minScore: 0, maxScore: 39 },
-    { label: 'HUMAN APPROVAL (EVALUATE)', minScore: 40, maxScore: 69 },
+    { label: 'HUMAN APPROVAL REQUIRED', minScore: 40, maxScore: 69 },
     { label: 'BLOCK (CRITICAL VIOLATION)', minScore: 70, maxScore: 100 },
   ];
 
@@ -264,35 +267,40 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
             )}
 
             {(alert.status === 'NEW' || alert.status === 'UNDER_REVIEW') && (
-              <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Operator Decision Controls:</span>
-                <div className="flex items-center gap-2">
-                  {alert.status === 'NEW' && (
+              <div className="pt-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Operator Decision Controls:</span>
+                  <div className="flex items-center gap-2">
+                    {alert.status === 'NEW' && (
+                      <button
+                        onClick={() => handleAction(onReview)}
+                        disabled={loading}
+                        className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        {loading ? 'Inspecting...' : '[ INSPECT EVIDENCE ]'}
+                      </button>
+                    )}
+                    {alert.status === 'UNDER_REVIEW' && (
+                      <button
+                        onClick={() => handleAction(onConfirm)}
+                        disabled={loading}
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        {loading ? 'Overriding...' : '[ OVERRIDE & ALLOW ]'}
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleAction(onReview)}
+                      onClick={() => handleAction(onDismiss)}
                       disabled={loading}
-                      className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors disabled:opacity-50"
                     >
-                      {loading ? 'Inspecting...' : '[ INSPECT EVIDENCE ]'}
+                      {loading ? 'Blocking...' : '[ BLOCK ACTION ]'}
                     </button>
-                  )}
-                  {alert.status === 'UNDER_REVIEW' && (
-                    <button
-                      onClick={() => handleAction(onConfirm)}
-                      disabled={loading}
-                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
-                    >
-                      {loading ? 'Authorizing...' : '[ AUTHORIZE / CONFIRM ]'}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleAction(onDismiss)}
-                    disabled={loading}
-                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Blocking...' : '[ BLOCK ACTION ]'}
-                  </button>
+                  </div>
                 </div>
+                <p className="text-[11px] text-amber-300/80 italic text-right font-sans">
+                  Override requires explicit human authorization and is recorded in the audit trail.
+                </p>
               </div>
             )}
           </div>

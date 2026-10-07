@@ -167,7 +167,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({
                 disabled={loading}
                 className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm disabled:opacity-50"
               >
-                {loading ? '[ AUTHORIZING... ]' : '[ AUTHORIZE / CONFIRM ]'}
+                {loading ? '[ OVERRIDING... ]' : '[ OVERRIDE & ALLOW ]'}
               </button>
               <button
                 onClick={() => handleAction(onDismiss)}
