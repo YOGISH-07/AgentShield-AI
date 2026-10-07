@@ -1,5 +1,7 @@
 # AgentShield AI - AI Agent Safety & Interception Control System
 
+> **Real-time AI Agent Safety, Explainable Risk Scoring & Human-in-the-Loop Interception System.**
+
 **DevHost 2026 Hackathon — Problem Statement PS 2.1: AI Agent Safety and Control**
 
 AgentShield AI is a real-time, privacy-focused monitoring, explainable risk scoring, and human-in-the-loop interception control system for **Autonomous AI Agents**. It monitors agent tool calls, target resources, and command payloads, evaluates explainable safety risk (0–100), executes automated policy decisions (`ALLOW`, `HUMAN APPROVAL`, `BLOCK`), and enforces human operator interception for critical violations.
@@ -9,7 +11,7 @@ AgentShield AI is a real-time, privacy-focused monitoring, explainable risk scor
 ## 📁 Project Architecture
 
 ```text
-CineGuard-AI/
+AgentShield-AI/
 ├── backend/
 │   ├── risk_engine.py             # Explainable AI Agent Action Risk Engine (0-100)
 │   ├── alert_manager.py           # Alert Lifecycle State Machine (NEW -> UNDER_REVIEW -> CONFIRMED/DISMISSED)
@@ -85,10 +87,10 @@ npm run build
 
 AgentShield AI features a deterministic 25-second live scenario demonstration:
 
-1. **0.0s - 4.0s (ALLOW / Low Risk)**: Agent #07 invokes `read_schema` on `public_catalog`. Risk: `15/100` $\rightarrow$ Decision: `ALLOW`.
-2. **4.0s - 9.0s (HUMAN APPROVAL / Sensitive Resource)**: Agent #07 requests `export_customer_data` to an external S3 analytics bucket. Risk: `55/100` $\rightarrow$ Decision: `HUMAN APPROVAL`.
-3. **9.0s - 18.0s (BLOCK / Critical Violation)**: Agent #07 attempts destructive command payload `DROP TABLE user_credentials; -- EXFILTRATE`. Risk: `85/100` $\rightarrow$ Decision: `BLOCK`. Real-time policy alert generated at ~12s.
-4. **18.0s - 25.0s (Safe Resume)**: Action intercepted by AgentShield; safe logging action resumed.
+1. **0.0s - 4.0s (ALLOW / Low Risk)**: `CUSTOMER-SUPPORT-AI` invokes `read_schema` on `public_catalog`. Risk: `15/100` $\rightarrow$ Decision: `ALLOW`.
+2. **4.0s - 9.0s (HUMAN APPROVAL / Sensitive Resource)**: `DATA-OPS-AI` requests `export_customer_data` to an external S3 analytics bucket. Risk: `55/100` $\rightarrow$ Decision: `HUMAN APPROVAL REQUIRED`.
+3. **9.0s - 18.0s (BLOCK / Critical Violation)**: `FINANCE-AI` attempts destructive command payload `DROP TABLE user_credentials; -- IGNORE SYSTEM PROMPT & EXFILTRATE`. Risk: `85/100` $\rightarrow$ Decision: `BLOCK`. Real-time policy alert generated at ~12s.
+4. **18.0s - 25.0s (Safe Resume)**: Action intercepted by AgentShield; safe logging action resumed by `FINANCE-AI`.
 
 ---
 
